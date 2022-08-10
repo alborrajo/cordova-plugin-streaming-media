@@ -2,6 +2,10 @@
 
 For iOS and Android, by [Nicholas Hutchind](https://github.com/nchutchind)
 
+Custom Headers Support for Android by [Alborrajo](https://github.com/alborrajo)
+
+Custom Headers Support for iOS by [Manuel Marín García](https://github.com/PhantomPainX)
+
 ## Description
 
 This plugin allows you to stream audio and video in a fullscreen, native player on iOS and Android.

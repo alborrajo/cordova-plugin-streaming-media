@@ -27,6 +27,7 @@
     NSString *videoType;
     AVPlayer *movie;
     BOOL controls;
+    NSMutableDictionary *headers;
 }
 
 NSString * const TYPE_VIDEO = @"VIDEO";
@@ -58,6 +59,12 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
         controls = [[options objectForKey:@"controls"] boolValue];
     } else {
         controls = YES;
+    }
+
+    if (![options isKindOfClass:[NSNull class]] && [options objectForKey:@"headers"]) {
+        headers = [options objectForKey:@"headers"];
+    } else {
+        headers = nil;
     }
     
     if ([type isEqualToString:TYPE_AUDIO]) {
@@ -211,7 +218,17 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
 -(void)startPlayer:(NSString*)uri {
     NSLog(@"startplayer called");
     NSURL *url             =  [NSURL URLWithString:uri];
-    movie                  =  [AVPlayer playerWithURL:url];
+    if (headers != nil) {
+        NSMutableDictionary* headerss = [NSMutableDictionary dictionary];
+        for (NSString *key in headers) {
+            [headerss setObject:[headers objectForKey:key] forKey:key];
+        }
+        AVURLAsset* asset = [AVURLAsset URLAssetWithURL:url options:@{@"AVURLAssetHTTPHeaderFieldsKey" : headerss}];
+        AVPlayerItem* item = [AVPlayerItem playerItemWithAsset:asset];
+        movie = [AVPlayer playerWithPlayerItem:item];
+    } else {
+        movie =  [AVPlayer playerWithURL:url];
+    }
     
     // handle orientation
     [self handleOrientation];
