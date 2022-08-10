@@ -1,7 +1,7 @@
-#import "StreamingMedia.h"
 #import <Cordova/CDV.h>
 #import <AVFoundation/AVFoundation.h>
 #import <AVKit/AVKit.h>
+#import "StreamingMedia.h"
 #import "LandscapeVideo.h"
 #import "PortraitVideo.h"
 
@@ -17,7 +17,7 @@
 @end
 
 @implementation StreamingMedia {
-    NSString* callbackId;
+    NSString *callbackId;
     AVPlayerViewController *moviePlayer;
     BOOL shouldAutoClose;
     UIColor *backgroundColor;
@@ -293,6 +293,9 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
     
+    // Listen for rate changes
+    [moviePlayer.player addObserver:self forKeyPath:@"rate" options:0 context:nil];
+    
     /* Listen for click on the "Done" button
      
      // Deprecated.. AVPlayerController doesn't offer a "Done" listener... thanks apple. We'll listen for an error when playback finishes
@@ -390,6 +393,20 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
     }
 }
 
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"rate"]) {
+        NSDictionary* message;
+        if ([moviePlayer.player rate]) {
+            message = @{@"eventType": @"PLAY"};
+        }
+        else {
+            message = @{@"eventType": @"PAUSE"};
+        }
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:message];
+        [pluginResult setKeepCallbackAsBool:YES];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+    }
+}
 
 - (void)cleanup {
     NSLog(@"Clean up called");
@@ -414,6 +431,9 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
      object:nil];
     
     if (moviePlayer) {
+        // Remove rate change listener
+        [moviePlayer.player removeObserver:self forKeyPath:@"rate" context:nil];
+
         [moviePlayer.player pause];
         [moviePlayer dismissViewControllerAnimated:YES completion:nil];
         moviePlayer = nil;
