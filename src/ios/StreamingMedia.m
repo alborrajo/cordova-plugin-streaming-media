@@ -13,6 +13,7 @@
 - (UIImage*)getImage: (NSString *)imageName;
 - (void)startPlayer:(NSString*)uri;
 - (void)moviePlayBackDidFinish:(NSNotification*)notification;
+- (void)moviePlayBackSeek:(NSNotification*)notification;
 - (void)cleanup;
 @end
 
@@ -293,6 +294,12 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
     
+    // Listen for seek
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(moviePlayBackSeek:)
+                                                 name:AVPlayerItemTimeJumpedNotification
+                                               object:moviePlayer.player.currentItem];
+
     // Listen for rate changes
     [moviePlayer.player addObserver:self forKeyPath:@"rate" options:0 context:nil];
     
@@ -393,6 +400,16 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
     }
 }
 
+- (void)moviePlayBackSeek:(NSNotification*)notification {
+    NSDictionary* message = @{
+        @"eventType": @"SEEK",
+        @"msec": @(CMTimeConvertScale(moviePlayer.player.currentTime, 1000, kCMTimeRoundingMethod_RoundHalfAwayFromZero).value)
+    };
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:message];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+}
+
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
     if ([keyPath isEqualToString:@"rate"]) {
         NSDictionary* message;
@@ -429,6 +446,11 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
      removeObserver:self
      name:UIDeviceOrientationDidChangeNotification
      object:nil];
+     // Remove seek listener
+    [[NSNotificationCenter defaultCenter]
+     removeObserver:self
+     name:AVPlayerItemTimeJumpedNotification
+     object:moviePlayer.player.currentItem];
     
     if (moviePlayer) {
         // Remove rate change listener
