@@ -7,6 +7,7 @@
 @property (nonatomic, strong) AVAudioSession* avSession;
 
 - (void)playVideo:(CDVInvokedUrlCommand*)command;
+- (void)stopVideo:(CDVInvokedUrlCommand*)command;
 - (void)playAudio:(CDVInvokedUrlCommand*)command;
 
 @end

@@ -29,6 +29,7 @@
     AVPlayer *movie;
     BOOL controls;
     NSMutableDictionary *headers;
+    NSNumber *customDuration;
 }
 
 NSString * const TYPE_VIDEO = @"VIDEO";
@@ -66,6 +67,12 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
         headers = [options objectForKey:@"headers"];
     } else {
         headers = nil;
+    }
+
+    if (![options isKindOfClass:[NSNull class]] && [options objectForKey:@"customDuration"]) {
+        customDuration = [options objectForKey:@"customDuration"];
+    } else {
+        customDuration = nil;
     }
     
     if ([type isEqualToString:TYPE_AUDIO]) {
@@ -107,7 +114,11 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
     NSLog(@"stop called");
     callbackId = command.callbackId;
     if (moviePlayer.player) {
-        [moviePlayer.player pause];
+        if([type isEqualToString:TYPE_AUDIO]) {
+            [moviePlayer.player pause];
+        } else {
+            [self cleanup];
+        }
     }
 }
 
@@ -115,6 +126,11 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
     NSLog(@"playvideo called");
     [self ignoreMute];
     [self play:command type:[NSString stringWithString:TYPE_VIDEO]];
+}
+
+-(void)stopVideo:(CDVInvokedUrlCommand *) command {
+    NSLog(@"stopvideo called");
+    [self stop:command type:[NSString stringWithString:TYPE_VIDEO]];
 }
 
 -(void)playAudio:(CDVInvokedUrlCommand *) command {
@@ -293,7 +309,7 @@ NSString * const DEFAULT_IMAGE_SCALE = @"center";
                                              selector:@selector(orientationChanged:)
                                                  name:UIDeviceOrientationDidChangeNotification
                                                object:nil];
-    
+
     // Listen for seek
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(moviePlayBackSeek:)
