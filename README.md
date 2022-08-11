@@ -2,10 +2,6 @@
 
 For iOS and Android, by [Nicholas Hutchind](https://github.com/nchutchind)
 
-Custom Headers Support for Android by [Alborrajo](https://github.com/alborrajo)
-
-Custom Headers Support for iOS by [Manuel Marín García](https://github.com/PhantomPainX)
-
 ## Description
 
 This plugin allows you to stream audio and video in a fullscreen, native player on iOS and Android.
@@ -42,21 +38,48 @@ cordova plugin add https://github.com/nchutchind/cordova-plugin-streaming-media
 
   // Play a video with callbacks
   var options = {
-    successCallback: function() {
-      console.log("Video was closed without error.");
+    successCallback: data => {
+      if(data == 'OK') {
+        console.log("Video was closed without error.");
+      } else {
+        handleCallback(data);
+      }
     },
-    errorCallback: function(errMsg) {
-      console.log("Error! " + errMsg);
-    },
+    errorCallback: errMsg => console.log("Error! " + errMsg),
     orientation: 'landscape',
     shouldAutoClose: true,  // true(default)/false
     controls: true, // true(default)/false. Used to hide controls on fullscreen
     headers: {
       Authorization: `Basic ${btoa(username + ':' + password)}`
-    }
+    },
+    duration: 30000 // Optional custom duration in milliseconds (Android only)
   };
+
+  function handleCallback(data) {
+    switch(data.eventType) {
+        case 'PLAY':
+            console.log('Video is playing');
+            break;
+        case 'PAUSE':
+            console.log('Video is paused');
+            break;
+        case 'SEEK':
+            console.log(`Seeking video to ${data.msec}`);
+            break;
+        case 'LIFECYCLE_ONPAUSE': // Android only
+            console.log('Activity paused');
+            break;
+        case 'LIFECYCLE_ONRESUME': // Android only
+            console.log('Activity resumed');
+            break;
+        default:
+            console.error("Unhandled stream event callback", data);
+    }
+
   window.plugins.streamingMedia.playVideo(videoUrl, options);
 
+  // Stop current video
+  window.plugins.streamingMedia.stopVideo();
 
   var audioUrl = STREAMING_AUDIO_URL;
 
